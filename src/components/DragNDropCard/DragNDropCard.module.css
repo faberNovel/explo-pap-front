@@ -1,0 +1,20 @@
+.drag-n-drop-card-img {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  border-radius: 7px 7px 0px 0px;
+}
+
+.drag-n-drop-card-title {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 18px;
+  color: #444444;
+  text-align: center;
+}

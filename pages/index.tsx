@@ -1,123 +1,322 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '../styles/Home.module.css'
+import React, { useEffect } from 'react';
+import Image from 'next/image';
+import { Inter } from '@next/font/google';
+import styles from '../styles/Home.module.css';
+import { useState } from 'react';
+import { DragNDropCard } from '../src/components/DragNDropCard/DragNDropCard';
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  OnDragEndResponder,
+  OnDragUpdateResponder,
+} from 'react-beautiful-dnd';
+import {
+  addElementToIndex,
+  getValueIndex,
+  moveValueToIndex,
+  removeElementToIndex,
+} from '../src/utils/array';
 
-const inter = Inter({ subsets: ['latin'] })
+const INITIAL_RACK_DATA = {
+  ['rack-1']: ['b', 'c', 'd', 'e', 'f', 'g', 'h'],
+  ['rack-2']: ['d', 'e', 'f', 'g', 'h', 'a', 'c', 'b'],
+  ['rack-3']: ['a', 'c', 'e', 'g'],
+  ['rack-4']: ['b', 'd', 'f', 'h'],
+  ['rack-5']: ['a', 'e', 'b', 'f', 'c', 'd', 'g'],
+  ['rack-6']: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
+};
+type rackIds = keyof typeof INITIAL_RACK_DATA;
+
+interface STATE {
+  data: typeof INITIAL_RACK_DATA;
+  state: {
+    dragOverId: string | null | undefined;
+  };
+}
+
+const INITIAL_STATE: STATE = {
+  state: { dragOverId: undefined },
+  data: INITIAL_RACK_DATA,
+};
 
 export default function Home() {
+  const [state, setState] = useState<STATE>(INITIAL_STATE);
+  const [selectedRack, setSelectedRack] = useState<rackIds>('rack-1');
+  const [winReady, setwinReady] = useState(false);
+
+  useEffect(() => {
+    setwinReady(true);
+  }, []);
+
+  if (!winReady) {
+    return null;
+  }
+
+  const handleDragUpdate: OnDragUpdateResponder = ({ combine }) => {
+    setState((currentState) => ({
+      ...currentState,
+      state: { dragOverId: combine ? combine?.draggableId : combine },
+    }));
+  };
+
+  const handleOnDragEnd: OnDragEndResponder = (result) => {
+    const { source, destination } = result;
+
+    if (source.droppableId === destination?.droppableId) {
+      setState((currentState) => {
+        const { data: currentRackData } = currentState;
+        const modifiedRack =
+          currentRackData[source.droppableId as unknown as rackIds];
+        const updatedRack = moveValueToIndex(
+          modifiedRack,
+          modifiedRack[source.index],
+          destination.index
+        );
+
+        return {
+          ...currentState,
+          data: {
+            ...currentRackData,
+            [source.droppableId]: updatedRack,
+          },
+        };
+      });
+    } else {
+      if (
+        (result.combine === undefined || result.combine === null) &&
+        destination !== undefined &&
+        destination !== null
+      ) {
+        setState((currentState) => {
+          const { data: currentRackData } = currentState;
+          const destinationRack =
+            currentRackData[destination.droppableId as unknown as rackIds];
+          const sourceRack =
+            currentRackData[source.droppableId as unknown as rackIds];
+
+          const elt = sourceRack[source.index];
+
+          return {
+            ...currentState,
+            data: {
+              ...currentRackData,
+              [source.droppableId]: removeElementToIndex(
+                sourceRack,
+                source.index
+              ),
+              [destination.droppableId]: addElementToIndex(
+                destinationRack,
+                elt,
+                destination.index
+              ),
+            },
+          };
+        });
+      } else if (result.combine !== undefined && result.combine !== null) {
+        console.log('combining');
+        setState((currentState) => {
+          const {
+            state: { dragOverId },
+            data: currentRackData,
+          } = currentState;
+          if (dragOverId !== null && dragOverId !== undefined) {
+            const destinationRack =
+              currentRackData[
+                result.combine?.droppableId as unknown as rackIds
+              ];
+            const sourceRack =
+              currentRackData[source.droppableId as unknown as rackIds];
+
+            const destinationValue = dragOverId.split('-')[2];
+            const destinationIndex = getValueIndex(
+              destinationRack,
+              destinationValue
+            );
+            const sourceElt = sourceRack[source.index];
+
+            const tempDestinationRack = removeElementToIndex(
+              destinationRack,
+              destinationIndex
+            );
+            const tempSourceRack = removeElementToIndex(
+              sourceRack,
+              source.index
+            );
+            const updatedDestinationRack = addElementToIndex(
+              tempDestinationRack,
+              sourceElt,
+              destinationIndex
+            );
+            const updatedSourceRack = addElementToIndex(
+              tempSourceRack,
+              destinationValue,
+              source.index
+            );
+            console.log({
+              sourceElt,
+              destinationValue,
+              sourceRack,
+              tempSourceRack,
+              updatedSourceRack,
+              destinationRack,
+              tempDestinationRack,
+              updatedDestinationRack,
+            });
+            return {
+              ...currentState,
+              data: {
+                ...currentState.data,
+                [source.droppableId]: updatedSourceRack,
+                [result.combine?.droppableId ?? '']: updatedDestinationRack,
+              },
+            };
+          } else {
+            return currentState;
+          }
+        });
+        // setRackData((currentRackData) => {
+        //   const destinationRack =
+        //     currentRackData[result.combine. combine.droppableId as unknown as rackIds];
+        //   const sourceRack =
+        //     currentRackData[source.droppableId as unknown as rackIds];
+
+        //   const elt = sourceRack[source.index];
+        //   const updatedSourceRack = [...sourceRack];
+        //   const updatedDestinationRack = [...destinationRack];
+        //   updatedSourceRack.splice(source.index, 1);
+        //   updatedDestinationRack.splice(destination.index, 0, elt);
+
+        //   return {
+        //     ...currentRackData,
+        //     [source.droppableId]: updatedSourceRack,
+        //     [destination.droppableId]: updatedDestinationRack,
+        //   };
+        // });
+      }
+    }
+  };
+
   return (
     <>
-      <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Generated by create next app" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
+      <div className={styles.main}>
+        <div className={styles['main-rack']}>
+          <div
+            style={{
+              width: '440px',
+              height: '296px',
+              position: 'relative',
+              border: '1px solid black',
+              background: 'ligthgrey',
+            }}
+          >
+            {state.data[selectedRack].map((pId, idx) => (
               <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
+                key={`${selectedRack}-bigrack-${pId}`}
+                src={`/photos/photo-${pId}.png`}
+                alt='vêtement'
+                height={296}
+                width={296}
+                style={{
+                  position: 'absolute',
+                  top: '0px',
+                  bottom: '0px',
+                  right: `${-90 + 30 * idx}px`,
+                }}
               />
-            </a>
+            ))}
           </div>
         </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
+        <div className={styles['rack-selector']}>
+          {Object.keys(state.data).map((rackId) => (
+            <div
+              key={rackId}
+              style={{
+                width: '153px',
+                height: '93px',
+                position: 'relative',
+                border: '1px solid black',
+                background: 'ligthgrey',
+              }}
+              className={styles.thumbnail}
+            >
+              <button
+                onClick={() => setSelectedRack(rackId as unknown as rackIds)}
+              >
+                {state.data[rackId as unknown as rackIds].map((pId, idx) => (
+                  <React.Fragment key={`${rackId}-thumbnail-${pId}`}>
+                    <Image
+                      src={`/photos/photo-${pId}.png`}
+                      alt='vêtement'
+                      height={93}
+                      width={93}
+                      style={{
+                        position: 'absolute',
+                        top: '0px',
+                        bottom: '0px',
+                        right: `${-25 + 10 * idx}px`,
+                      }}
+                    />
+                  </React.Fragment>
+                ))}
+                <p className={styles['rack-count']}>
+                  {rackId.split('-')[1]} sur {Object.keys(state.data).length}
+                </p>
+              </button>
+            </div>
+          ))}
         </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+      </div>
+      <div className='flex flex-col gap-8 mt-8'>
+        <DragDropContext
+          onDragEnd={handleOnDragEnd}
+          onDragUpdate={handleDragUpdate}
+        >
+          {Object.keys(state.data).map((rackId) => (
+            <Droppable
+              droppableId={rackId}
+              key={rackId}
+              direction='horizontal'
+              isCombineEnabled
+            >
+              {(droppableProvided, droppableSnapshot) => (
+                <>
+                  <div
+                    className='flex flex-row gap-8 mt-8'
+                    ref={droppableProvided.innerRef}
+                    {...droppableProvided.droppableProps}
+                  >
+                    {state.data[rackId as unknown as rackIds].map(
+                      (pId, idx) => (
+                        <Draggable
+                          key={`${rackId}-${pId}`}
+                          draggableId={`${rackId}-${pId}-${idx}`}
+                          index={idx}
+                        >
+                          {(draggableProvided, draggableSnapshot) => (
+                            <div>
+                              <DragNDropCard
+                                key={`${rackId}-${pId}`}
+                                imgId={pId}
+                                imgRef={pId}
+                                droppableProvided={droppableProvided}
+                                droppableSnapshot={droppableSnapshot}
+                                draggableProvided={draggableProvided}
+                                draggableSnapshot={draggableSnapshot}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      )
+                    )}
+                    {droppableProvided.placeholder}
+                  </div>
+                </>
+              )}
+            </Droppable>
+          ))}
+        </DragDropContext>
+      </div>
     </>
-  )
+  );
 }
