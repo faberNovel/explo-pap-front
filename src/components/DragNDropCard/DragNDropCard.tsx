@@ -8,9 +8,10 @@ import {
   DroppableProvided,
   DroppableStateSnapshot,
 } from 'react-beautiful-dnd';
+import { getImageName } from '../../utils/name';
 
 interface DragNDropCardProps {
-  imgId: string;
+  imgId: `${string}-${string}`;
   imgRef: string;
   droppableProvided: DroppableProvided;
   droppableSnapshot: DroppableStateSnapshot;
@@ -26,7 +27,6 @@ export const DragNDropCard = ({
   draggableProvided,
   draggableSnapshot,
 }: DragNDropCardProps) => {
-  console.log(draggableSnapshot);
   return (
     <div
       ref={draggableProvided.innerRef}
@@ -41,7 +41,7 @@ export const DragNDropCard = ({
       }}
     >
       <Image
-        src={`/photos/photo-${imgId}.png`}
+        src={`/photos/photo-${getImageName(imgId)}.png`}
         alt='vêtement'
         className={cx(styles['drag-n-drop-card-img'], 'rounded-t-2')}
         width={100}
@@ -49,7 +49,7 @@ export const DragNDropCard = ({
       />
       <p className={styles['drag-n-drop-card-title']}>
         {draggableSnapshot.combineWith || draggableSnapshot.combineTargetFor
-          ? '&#8644;'
+          ? '🔄'
           : imgRef}
       </p>
     </div>

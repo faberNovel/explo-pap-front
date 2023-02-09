@@ -4,9 +4,9 @@ import React, { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Image from 'next/image';
 
-import styles from './styles.module.css';
+import styles from '../styles/Home.module.css';
 import { useState } from 'react';
-import { DragNDropCard } from '../src/components/DragNDropCard/DragNDropCard';
+import { DragNDropCard } from '../../src/components/DragNDropCard/DragNDropCard';
 import {
   DragDropContext,
   Draggable,
@@ -19,10 +19,8 @@ import {
   getValueIndex,
   moveValueToIndex,
   removeElementToIndex,
-  switchElements,
-} from '../src/utils/array';
-import { getImageName } from '../src/utils/name';
-import { stat } from 'fs';
+} from '../../src/utils/array';
+import { getImageName } from '../../src/utils/name';
 
 const INITIAL_RACK_DATA = {
   ['rack-1']: [
@@ -113,11 +111,7 @@ export default function Home() {
   const handleOnDragEnd: OnDragEndResponder = (result) => {
     const { source, destination } = result;
 
-    if (
-      source.droppableId === destination?.droppableId &&
-      (result.combine === undefined || result.combine === null)
-    ) {
-      // Déplacement d'un article sur le même portant
+    if (source.droppableId === destination?.droppableId) {
       setState((currentState) => {
         const { data: currentRackData } = currentState;
         const modifiedRack =
@@ -127,6 +121,7 @@ export default function Home() {
           modifiedRack[source.index],
           destination.index
         );
+
         return {
           ...currentState,
           data: {
@@ -141,7 +136,6 @@ export default function Home() {
         destination !== undefined &&
         destination !== null
       ) {
-        // Déplacement d'un article sur un autre portant
         setState((currentState) => {
           const { data: currentRackData } = currentState;
           const destinationRack =
@@ -168,76 +162,62 @@ export default function Home() {
           };
         });
       } else if (result.combine !== undefined && result.combine !== null) {
-        // Interversion de deux articles
         setState((currentState) => {
           const {
             state: { dragOverId },
             data: currentRackData,
           } = currentState;
-          // Articles sur le même portant
           if (dragOverId !== null && dragOverId !== undefined) {
-            if (result.combine?.droppableId === source.droppableId) {
-              const sourceRack =
-                currentRackData[source.droppableId as unknown as rackIds];
-              const firstEltIdx = source.index;
-              const secondElt = dragOverId;
-              const secondEltIdx = getValueIndex(sourceRack, secondElt);
+            const destinationRack =
+              currentRackData[
+                result.combine?.droppableId as unknown as rackIds
+              ];
+            const sourceRack =
+              currentRackData[source.droppableId as unknown as rackIds];
 
-              return {
-                ...currentState,
-                data: {
-                  ...currentState.data,
-                  [source.droppableId]: switchElements(
-                    sourceRack,
-                    firstEltIdx,
-                    secondEltIdx
-                  ),
-                },
-              };
-            } else {
-              // Articles sur deux portants différents
-              const destinationRack =
-                currentRackData[
-                  result.combine?.droppableId as unknown as rackIds
-                ];
-              const sourceRack =
-                currentRackData[source.droppableId as unknown as rackIds];
+            const destinationValue = dragOverId;
+            const destinationIndex = getValueIndex(
+              destinationRack,
+              destinationValue
+            );
+            const sourceElt = sourceRack[source.index];
 
-              const destinationValue = dragOverId;
-              const destinationIndex = getValueIndex(
-                destinationRack,
-                destinationValue
-              );
-              const sourceElt = sourceRack[source.index];
-
-              const tempDestinationRack = removeElementToIndex(
-                destinationRack,
-                destinationIndex
-              );
-              const tempSourceRack = removeElementToIndex(
-                sourceRack,
-                source.index
-              );
-              const updatedDestinationRack = addElementToIndex(
-                tempDestinationRack,
-                sourceElt,
-                destinationIndex
-              );
-              const updatedSourceRack = addElementToIndex(
-                tempSourceRack,
-                destinationValue,
-                source.index
-              );
-
-              return {
-                ...currentState,
-                data: {
-                  ...currentState.data,
-                  [source.droppableId]: updatedSourceRack,
-                  [result.combine?.droppableId ?? '']: updatedDestinationRack,
-                },
-              };
-            }
+            const tempDestinationRack = removeElementToIndex(
+              destinationRack,
+              destinationIndex
+            );
+            const tempSourceRack = removeElementToIndex(
+              sourceRack,
+              source.index
+            );
+            const updatedDestinationRack = addElementToIndex(
+              tempDestinationRack,
+              sourceElt,
+              destinationIndex
+            );
+            const updatedSourceRack = addElementToIndex(
+              tempSourceRack,
+              destinationValue,
+              source.index
+            );
+            console.log({
+              sourceElt,
+              destinationValue,
+              sourceRack,
+              tempSourceRack,
+              updatedSourceRack,
+              destinationRack,
+              tempDestinationRack,
+              updatedDestinationRack,
+            });
+            return {
+              ...currentState,
+              data: {
+                ...currentState.data,
+                [source.droppableId]: updatedSourceRack,
+                [result.combine?.droppableId ?? '']: updatedDestinationRack,
+              },
+            };
           } else {
             return currentState;
           }
@@ -249,22 +229,11 @@ export default function Home() {
   return (
     <div>
       <div className={styles.main}>
-        <div className='flex flex-row gap-4 py-2'>
-          {Object.keys(state.data).map((rackId) => (
-            <button
-              key={rackId}
-              className={styles['rack-selector']}
-              onClick={() => setSelectedRack(rackId as unknown as rackIds)}
-            >
-              Rack {rackId.split('-')[1]}
-            </button>
-          ))}
-        </div>
         <div className={styles['main-rack']}>
           <div
             style={{
-              width: '711px',
-              height: '519px',
+              width: '440px',
+              height: '296px',
               position: 'relative',
               border: '1px solid black',
               background: 'ligthgrey',
@@ -275,17 +244,56 @@ export default function Home() {
                 key={`${selectedRack}-bigrack-${pId}`}
                 src={`/photos/photo-${getImageName(pId)}.png`}
                 alt='vêtement'
-                height={519}
-                width={519 / 1.499}
+                height={296}
+                width={296}
                 style={{
                   position: 'absolute',
                   top: '0px',
                   bottom: '0px',
-                  right: `${-90 + 45 * idx}px`,
+                  right: `${-90 + 30 * idx}px`,
                 }}
               />
             ))}
           </div>
+        </div>
+        <div className={styles['rack-selector']}>
+          {Object.keys(state.data).map((rackId) => (
+            <div
+              key={rackId}
+              style={{
+                width: '153px',
+                height: '93px',
+                position: 'relative',
+                border: '1px solid black',
+                background: 'ligthgrey',
+              }}
+              className={styles.thumbnail}
+            >
+              <button
+                onClick={() => setSelectedRack(rackId as unknown as rackIds)}
+              >
+                {state.data[rackId as unknown as rackIds].map((pId, idx) => (
+                  <React.Fragment key={`${rackId}-thumbnail-${pId}`}>
+                    <Image
+                      src={`/photos/photo-${getImageName(pId)}.png`}
+                      alt='vêtement'
+                      height={93}
+                      width={93}
+                      style={{
+                        position: 'absolute',
+                        top: '0px',
+                        bottom: '0px',
+                        right: `${-25 + 10 * idx}px`,
+                      }}
+                    />
+                  </React.Fragment>
+                ))}
+                <p className={styles['rack-count']}>
+                  {rackId.split('-')[1]} sur {Object.keys(state.data).length}
+                </p>
+              </button>
+            </div>
+          ))}
         </div>
       </div>
       <div className='flex flex-col gap-8 mt-8'>

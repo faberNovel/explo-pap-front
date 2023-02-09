@@ -39,3 +39,16 @@ export const moveValueToIndex = <T>(
 
   return moveEltToIndex(array, valueIndex, toIndex);
 };
+
+export const switchElements = <T>(
+  array: T[],
+  firstEltIndx: number,
+  secondEltIdx: number
+) => {
+  const arrayToUpdate = [...array];
+  const firstElt = array[firstEltIndx];
+  const secondElt = array[secondEltIdx];
+  arrayToUpdate.splice(firstEltIndx, 1, secondElt);
+  arrayToUpdate.splice(secondEltIdx, 1, firstElt);
+  return arrayToUpdate;
+};

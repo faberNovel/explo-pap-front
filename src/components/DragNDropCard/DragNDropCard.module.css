@@ -17,4 +17,7 @@
   line-height: 18px;
   color: #444444;
   text-align: center;
+  height: 21px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
