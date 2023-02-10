@@ -60,3 +60,8 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+.highcharts-title {
+  display: block;
+  width: inherit;
+}
