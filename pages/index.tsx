@@ -4,6 +4,8 @@ import React, { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Image from 'next/image';
 
+import cx from 'classnames';
+
 import styles from './styles.module.css';
 import { useState } from 'react';
 import { DragNDropCard } from '../src/components/DragNDropCard/DragNDropCard';
@@ -22,7 +24,7 @@ import {
   switchElements,
 } from '../src/utils/array';
 import { getImageName } from '../src/utils/name';
-import { stat } from 'fs';
+import StatsPage from './stats';
 
 const INITIAL_RACK_DATA = {
   ['rack-1']: [
@@ -33,6 +35,11 @@ const INITIAL_RACK_DATA = {
     `f-${uuidv4()}`,
     `g-${uuidv4()}`,
     `h-${uuidv4()}`,
+    `b-${uuidv4()}`,
+    `c-${uuidv4()}`,
+    `d-${uuidv4()}`,
+    `e-${uuidv4()}`,
+    `f-${uuidv4()}`,
   ],
   ['rack-2']: [
     `d-${uuidv4()}`,
@@ -247,92 +254,97 @@ export default function Home() {
   };
 
   return (
-    <div>
+    <div className={styles['page-layout']}>
       <div className={styles.main}>
-        <div className='flex flex-row gap-4 py-2'>
-          {Object.keys(state.data).map((rackId) => (
-            <button
-              key={rackId}
-              className={styles['rack-selector']}
-              onClick={() => setSelectedRack(rackId as unknown as rackIds)}
-            >
-              Rack {rackId.split('-')[1]}
-            </button>
-          ))}
-        </div>
-        <div className={styles['main-rack']}>
-          <div
-            style={{
-              width: '711px',
-              height: '519px',
-              position: 'relative',
-              border: '1px solid black',
-              background: 'ligthgrey',
-            }}
-          >
-            {state.data[selectedRack].map((pId, idx) => (
-              <Image
-                key={`${selectedRack}-bigrack-${pId}`}
-                src={`/photos/photo-${getImageName(pId)}.png`}
-                alt='vêtement'
-                height={519}
-                width={519 / 1.499}
-                style={{
-                  position: 'absolute',
-                  top: '0px',
-                  bottom: '0px',
-                  right: `${-90 + 45 * idx}px`,
-                }}
-              />
+        <div>
+          <div className='flex flex-row gap-4 py-2'>
+            {Object.keys(state.data).map((rackId) => (
+              <button
+                key={rackId}
+                className={styles['rack-selector']}
+                onClick={() => setSelectedRack(rackId as unknown as rackIds)}
+              >
+                Rack {rackId.split('-')[1]}
+              </button>
             ))}
           </div>
+          <div className={styles['main-rack']}>
+            <div
+              style={{
+                width: '711px',
+                height: '519px',
+                position: 'relative',
+                border: '1px solid black',
+                background: '#F5F5F5',
+              }}
+            >
+              {[...state.data[selectedRack]].reverse().map((pId, idx) => (
+                <Image
+                  key={`${selectedRack}-bigrack-${pId}`}
+                  src={`/photos/photo-${getImageName(pId)}.png`}
+                  alt='vêtement'
+                  height={519}
+                  width={519 / 1.499}
+                  style={{
+                    position: 'absolute',
+                    top: '0px',
+                    bottom: '0px',
+                    right: `${-90 + 45 * idx}px`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className='flex flex-col gap-8 p-16'>
+          <DragDropContext
+            onDragEnd={handleOnDragEnd}
+            onDragUpdate={handleDragUpdate}
+          >
+            {Object.keys(state.data).map((rackId) => (
+              <Droppable
+                droppableId={rackId}
+                key={rackId}
+                direction='horizontal'
+                isCombineEnabled
+              >
+                {(droppableProvided, droppableSnapshot) => (
+                  <>
+                    <div
+                      className='flex flex-row gap-8 mt-8 overflow-x-auto'
+                      ref={droppableProvided.innerRef}
+                      {...droppableProvided.droppableProps}
+                    >
+                      {state.data[rackId as unknown as rackIds].map(
+                        (pId, idx) => (
+                          <Draggable key={pId} draggableId={pId} index={idx}>
+                            {(draggableProvided, draggableSnapshot) => (
+                              <div>
+                                <DragNDropCard
+                                  key={pId}
+                                  imgId={pId}
+                                  imgRef={pId}
+                                  droppableProvided={droppableProvided}
+                                  droppableSnapshot={droppableSnapshot}
+                                  draggableProvided={draggableProvided}
+                                  draggableSnapshot={draggableSnapshot}
+                                />
+                              </div>
+                            )}
+                          </Draggable>
+                        )
+                      )}
+                      {droppableProvided.placeholder}
+                    </div>
+                  </>
+                )}
+              </Droppable>
+            ))}
+          </DragDropContext>
         </div>
       </div>
-      <div className='flex flex-col gap-8 mt-8'>
-        <DragDropContext
-          onDragEnd={handleOnDragEnd}
-          onDragUpdate={handleDragUpdate}
-        >
-          {Object.keys(state.data).map((rackId) => (
-            <Droppable
-              droppableId={rackId}
-              key={rackId}
-              direction='horizontal'
-              isCombineEnabled
-            >
-              {(droppableProvided, droppableSnapshot) => (
-                <>
-                  <div
-                    className='flex flex-row gap-8 mt-8'
-                    ref={droppableProvided.innerRef}
-                    {...droppableProvided.droppableProps}
-                  >
-                    {state.data[rackId as unknown as rackIds].map(
-                      (pId, idx) => (
-                        <Draggable key={pId} draggableId={pId} index={idx}>
-                          {(draggableProvided, draggableSnapshot) => (
-                            <div>
-                              <DragNDropCard
-                                key={pId}
-                                imgId={pId}
-                                imgRef={pId}
-                                droppableProvided={droppableProvided}
-                                droppableSnapshot={droppableSnapshot}
-                                draggableProvided={draggableProvided}
-                                draggableSnapshot={draggableSnapshot}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      )
-                    )}
-                    {droppableProvided.placeholder}
-                  </div>
-                </>
-              )}
-            </Droppable>
-          ))}
-        </DragDropContext>
+      <div className={styles['sidebar']}>
+        <StatsPage />
       </div>
     </div>
   );

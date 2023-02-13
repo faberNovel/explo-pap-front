@@ -63,5 +63,10 @@ a {
 
 .highcharts-title {
   display: block;
-  width: inherit;
+  min-width: 95%; /* hacky, 100% est en overflow */
+  font-family: 'Roboto';
+  font-style: normal;
+  /* font-weight: 700; */
+  font-size: 14px;
+  line-height: 18px;
 }

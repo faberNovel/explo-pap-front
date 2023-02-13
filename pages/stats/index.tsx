@@ -5,7 +5,7 @@ const progressBarOptions: Highcharts.Options = {
   chart: {
     type: 'bar',
     height: 100,
-    width: 426,
+    reflow: true,
   },
 
   title: {
@@ -22,6 +22,11 @@ const progressBarOptions: Highcharts.Options = {
     margin: 0,
     style: {
       display: 'block',
+      fontFamily: 'Roboto',
+      fontStyle: 'normal',
+      fontWeight: '700',
+      fontSize: '14px',
+      lineHeight: '18px',
     },
   },
   legend: {
@@ -34,7 +39,7 @@ const progressBarOptions: Highcharts.Options = {
     bar: {
       /* stacking: 'normal', */
       borderWidth: 0,
-      borderRadius: 3,
+      borderRadius: 5,
       pointWidth: 26,
     },
   },
@@ -60,7 +65,7 @@ const progressBarOptions: Highcharts.Options = {
     {
       name: '',
       data: [100],
-      color: 'gray',
+      color: '#E0E0E0',
       grouping: false,
       animation: false,
       // enableMouseTracking: false, disable tooltip on just this data element
@@ -79,6 +84,8 @@ const progressBarOptions: Highcharts.Options = {
 const barChartOptions: Highcharts.Options = {
   chart: {
     type: 'column',
+    reflow: true,
+    height: 242,
   },
   title: { text: '' },
   xAxis: {
@@ -102,7 +109,6 @@ const barChartOptions: Highcharts.Options = {
     bar: {
       /* stacking: 'normal', */
       borderWidth: 0,
-      borderRadius: 100,
       pointWidth: 24,
     },
     series: {
@@ -115,6 +121,8 @@ const barChartOptions: Highcharts.Options = {
   series: [
     {
       name: 'Browsers',
+      borderRadiusTopLeft: '30%',
+      borderRadiusTopRight: '30%',
       colorByPoint: true,
       animation: false,
       data: [
@@ -157,14 +165,14 @@ const barChartOptions: Highcharts.Options = {
 };
 
 const StatsPage = () => (
-  <div>
-    <div style={{ width: '426px' }}>
+  <>
+    <div className='p-4'>
       <HighchartsReact highcharts={Highcharts} options={progressBarOptions} />
     </div>
-    <div style={{ width: '426px' }}>
+    <div className='p-4'>
       <HighchartsReact highcharts={Highcharts} options={barChartOptions} />
     </div>
-  </div>
+  </>
 );
 
 export default StatsPage;
